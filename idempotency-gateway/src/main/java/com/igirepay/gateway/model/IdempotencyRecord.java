@@ -1,17 +1,53 @@
 package com.igirepay.gateway.model;
 
+import jakarta.persistence.*;
 import lombok.Data;
-import java.util.concurrent.locks.ReentrantLock;
 
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "idempotency_records")
 @Data
 public class IdempotencyRecord {
-    public enum Status { PROCESSING, COMPLETED }
 
-    private Status status;
-    private String requestPayloadHash; // Secure SHA-256 fingerprint token string
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, unique = true)
+    private String idempotencyKey;
+
+    @Column(nullable = false)
+    private String requestPayloadHash;   // Your naming preference
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Status status = Status.PROCESSING;
+
+    @Column(columnDefinition = "TEXT")
     private String responseBody;
-    private int responseStatusCode;
-    
-    // Explicitly blocks identical concurrent requests (Bonus Story)
-    private final ReentrantLock lock = new ReentrantLock();
+
+    private Integer responseStatusCode;
+
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * Bonus User Story: In-Flight Request Status
+     */
+    public enum Status {
+        PROCESSING,    // Equivalent to IN_PROGRESS
+        COMPLETED,     // SUCCESS
+        FAILED
+    }
 }
