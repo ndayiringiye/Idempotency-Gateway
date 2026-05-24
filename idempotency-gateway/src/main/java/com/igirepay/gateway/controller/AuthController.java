@@ -25,9 +25,12 @@ public class AuthController {
         if (userRepository.findByUsername(body.get("username")).isPresent()) {
             return ResponseEntity.badRequest().body("Username already exists");
         }
+
         User user = new User();
         user.setUsername(body.get("username"));
         user.setPassword(passwordEncoder.encode(body.get("password")));
+        user.setEmail(body.get("email"));
+        
         userRepository.save(user);
         return ResponseEntity.ok("User registered successfully");
     }
@@ -37,6 +40,7 @@ public class AuthController {
         authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         body.get("username"), body.get("password")));
+
         String token = jwtUtil.generateToken(body.get("username"));
         return ResponseEntity.ok(Map.of("token", token));
     }
